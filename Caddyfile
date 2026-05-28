@@ -1,0 +1,3 @@
+app.dnguyen.click {
+    reverse_proxy app:3000
+}
