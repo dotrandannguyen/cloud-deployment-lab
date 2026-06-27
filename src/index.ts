@@ -1,20 +1,42 @@
 import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
+// Đã xóa import cors từ 'cors';
 
 dotenv.config();
 
-if (
-  !process.env.DATABASE_URL ||
-  !process.env.DATABASE_URL.startsWith('postgres://')
-) {
+const app = express();
+
+/**
+ * Middlewares
+ */
+// Đã xóa app.use(cors()); -> Không cần thiết nữa vì Frontend và Backend chung Domain qua CloudFront
+app.use(express.json());
+
+/**
+ * Validate env
+ */
+const dbUrl = process.env.DATABASE_URL;
+
+if (!dbUrl?.startsWith('postgres://')) {
   throw new Error('Invalid DATABASE_URL');
 }
 
-const app = express();
-const PORT = process.env.PORT ?? 3000;
-
-app.get('/health', (_req: Request, res: Response) => {
-  res.json({ status: 'ok', env: process.env.NODE_ENV });
+/**
+ * Routes
+ */
+// Sửa đổi từ '/health' thành '/api/health' để khớp với CloudFront Behavior
+app.get('/api/health', (_req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    env: process.env.NODE_ENV ?? 'development',
+  });
 });
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+/**
+ * Start server
+ */
+const PORT: number = Number(process.env.PORT) || 3000;
+
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
