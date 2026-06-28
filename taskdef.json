@@ -21,7 +21,8 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/backend",
+          "awslogs-create-group": "true",
+          "awslogs-group": "/ecs/td-backend-api",
           "awslogs-region": "ap-southeast-1",
           "awslogs-stream-prefix": "ecs"
         }
