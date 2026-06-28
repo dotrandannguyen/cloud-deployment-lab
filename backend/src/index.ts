@@ -15,11 +15,11 @@ app.use(express.json());
 /**
  * Validate env
  */
-const dbUrl = process.env.DATABASE_URL;
-
-if (!dbUrl?.startsWith('postgres://')) {
-  throw new Error('Invalid DATABASE_URL');
-}
+// const dbUrl = process.env.DATABASE_URL;
+// 
+// if (!dbUrl?.startsWith('postgres://')) {
+//   throw new Error('Invalid DATABASE_URL');
+// }
 
 /**
  * Routes
