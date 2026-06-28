@@ -1,0 +1,61 @@
+name: Deploy to AWS ECS & S3
+
+on:
+  push:
+    branches:
+      - master
+
+env:
+  AWS_REGION: "ap-southeast-1"
+  ROLE_TO_ASSUME: "arn:aws:iam::979768262042:role/GitHubActions-DeployRole"
+  ECR_REPOSITORY: "cloud-training-backend"
+  ECS_CLUSTER: "cluster-backend-api"
+  ECS_SERVICE: "td-backend-api-service-ns0v27eb"
+  S3_BUCKET: "cloud-training-frontend-979768262042"
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag, and push Docker image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG ./backend
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_ENV
+
+      - name: Render new task definition
+        run: |
+          sed -i "s|IMAGE_PLACEHOLDER|${{ env.IMAGE_URI }}|g" taskdef.json
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: taskdef.json
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Deploy Frontend to Amazon S3
+        run: |
+          aws s3 sync ./frontend s3://${{ env.S3_BUCKET }} --delete
