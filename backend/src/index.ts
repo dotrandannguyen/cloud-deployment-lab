@@ -32,6 +32,12 @@ app.get('/api/health', (_req: Request, res: Response) => {
   });
 });
 
+// Thêm route '/' để vượt qua Health Check mặc định của AWS ALB
+app.get('/', (_req: Request, res: Response) => {
+  res.send('Backend is running!');
+});
+
+
 /**
  * Start server
  */
